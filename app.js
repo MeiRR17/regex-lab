@@ -1,0 +1,223 @@
+import { explainPattern } from './src/explain.js';
+
+const get = id => document.getElementById(id);
+const patternInput = get('pattern');
+const textInput = get('text');
+const flagInputs = [...document.querySelectorAll('.flags input')];
+const highlight = get('highlighted');
+const matchList = get('match-list');
+const exportButton = get('export');
+const example = {
+  pattern: '([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+)\\.([A-Za-z]{2,})',
+  text: 'Questions? Email hello@example.com or support@regex.dev.\nIgnore invalid addresses like hello@@site.com.',
+};
+let worker = null;
+let requestId = 0;
+let lastResult = null;
+let timeout = null;
+
+function flags() {
+  return flagInputs.filter(input => input.checked).map(input => input.value).join('');
+}
+function status(message, kind = '') {
+  const node = get('message');
+  node.textContent = message;
+  node.className = 'status' + (kind ? ' ' + kind : '');
+}
+function span(text, className = '') {
+  const node = document.createElement('span');
+  node.textContent = text;
+  if (className) node.className = className;
+  return node;
+}
+function cancelWorker() {
+  if (worker) { worker.terminate(); worker = null; }
+  if (timeout !== null) { clearTimeout(timeout); timeout = null; }
+}
+function clearResults() {
+  lastResult = null;
+  exportButton.disabled = true;
+  get('match-count').textContent = '0 matches';
+  get('duration').textContent = '—';
+  highlight.replaceChildren();
+  matchList.replaceChildren(span('Matched groups and offsets will appear here.', 'empty-state'));
+}
+function renderExplanation() {
+  get('flag-readout').textContent = flags() || '—';
+  const tokens = get('tokens');
+  const details = get('flag-explanations');
+  tokens.replaceChildren();
+  details.replaceChildren();
+  const explanation = explainPattern(patternInput.value, flags());
+  if (!explanation.tokens.length) tokens.append(span('Add a pattern to see an explanation.', 'empty-token'));
+  for (const item of explanation.tokens) {
+    const div = document.createElement('div');
+    div.className = 'token ' + item.kind;
+    const code = document.createElement('code');
+    code.textContent = item.value;
+    const detail = document.createElement('small');
+    detail.textContent = item.label;
+    div.append(code, detail);
+    tokens.append(div);
+  }
+  for (const item of explanation.flags) {
+    const label = document.createElement('span');
+    label.textContent = item.value + ' — ' + item.label;
+    details.append(label);
+  }
+}
+function renderHighlight(text, matches) {
+  highlight.replaceChildren();
+  let cursor = 0;
+  for (const match of matches) {
+    if (match.index < cursor || match.index > text.length || match.end > text.length) continue;
+    highlight.append(document.createTextNode(text.slice(cursor, match.index)));
+    const mark = document.createElement('mark');
+    if (match.end === match.index) {
+      mark.className = 'zero-width';
+      mark.textContent = '';
+      mark.setAttribute('aria-label', 'Zero-width match at position ' + match.index);
+    } else mark.textContent = text.slice(match.index, match.end);
+    highlight.append(mark);
+    cursor = match.end;
+  }
+  highlight.append(document.createTextNode(text.slice(cursor)));
+}
+function renderMatches(matches) {
+  matchList.replaceChildren();
+  if (!matches.length) {
+    matchList.append(span('No matches. Try adjusting the expression or flags.', 'empty-state'));
+    return;
+  }
+  for (let i = 0; i < matches.length; i++) {
+    const result = matches[i];
+    const card = document.createElement('article');
+    card.className = 'match-item';
+    const line = document.createElement('div');
+    line.className = 'match-line';
+    const code = document.createElement('code');
+    code.textContent = '#' + (i + 1) + '  ' + JSON.stringify(result.value.length > 180 ? result.value.slice(0, 180) + '…' : result.value);
+    const index = span('[' + result.index + '–' + result.end + ']', 'match-index');
+    line.append(code, index);
+    card.append(line);
+    if (result.captures.length || (result.groups && Object.keys(result.groups).length)) {
+      const captures = document.createElement('div');
+      captures.className = 'captures';
+      const parts = result.captures.map((capture, j) => 'Group ' + (j + 1) + ': ' + JSON.stringify(capture));
+      if (result.groups) {
+        for (const [name, value] of Object.entries(result.groups)) {
+          parts.push('Named "' + name + '": ' + JSON.stringify(value));
+        }
+      }
+      captures.textContent = parts.join('\n');
+      card.append(captures);
+    }
+    matchList.append(card);
+  }
+}
+
+function run() {
+  cancelWorker();
+  clearResults();
+  const pattern = patternInput.value;
+  const text = textInput.value;
+  const activeFlags = flags();
+  if (!pattern.trim()) {
+    status('Enter a pattern to find matches.', 'error');
+    return;
+  }
+  if (pattern.length > 500 || text.length > 50_000) {
+    status('Limit: 500 pattern characters and 50,000 test-text characters.', 'error');
+    return;
+  }
+  status('Evaluating the regular expression…');
+  const id = ++requestId;
+  try {
+    worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
+  } catch {
+    status('Web Workers are unavailable here. Open the project through a local HTTP server.', 'error');
+    return;
+  }
+  const activeWorker = worker;
+  timeout = setTimeout(() => {
+    if (worker !== activeWorker) return;
+    cancelWorker();
+    status('Execution stopped after 1.5 seconds. Try a simpler pattern to avoid catastrophic backtracking.', 'error');
+  }, 1500);
+  activeWorker.onerror = () => {
+    if (worker !== activeWorker) return;
+    cancelWorker();
+    status('The regex worker could not start. Serve the project over HTTP or HTTPS.', 'error');
+  };
+  activeWorker.onmessage = event => {
+    if (worker !== activeWorker || event.data?.id !== id) return;
+    cancelWorker();
+    if (event.data.error) {
+      status(event.data.error, 'error');
+      return;
+    }
+    lastResult = {
+      pattern, flags: activeFlags, inputLength: text.length, matches: event.data.matches,
+      durationMs: event.data.duration, capped: event.data.capped,
+    };
+    renderHighlight(text, event.data.matches);
+    renderMatches(event.data.matches);
+    get('match-count').textContent = event.data.matches.length + (event.data.capped ? '+' : '') + ' matches';
+    get('duration').textContent = event.data.duration + ' ms in an isolated worker';
+    exportButton.disabled = false;
+    status(event.data.matches.length + ' match(es) found.' +
+      (event.data.capped ? ' Showing only the first 250.' : ''), 'success');
+  };
+  activeWorker.postMessage({ id, pattern, flags: activeFlags, text });
+}
+
+get('run').addEventListener('click', run);
+get('example').addEventListener('click', () => {
+  patternInput.value = example.pattern;
+  textInput.value = example.text;
+  flagInputs.forEach(input => { input.checked = input.value === 'g' || input.value === 'i'; });
+  get('text-size').textContent = textInput.value.length.toLocaleString() + ' characters';
+  renderExplanation();
+  run();
+});
+get('reset').addEventListener('click', () => {
+  cancelWorker();
+  patternInput.value = '';
+  textInput.value = '';
+  flagInputs.forEach(input => { input.checked = input.value === 'g' || input.value === 'i'; });
+  get('text-size').textContent = '0 characters';
+  clearResults();
+  renderExplanation();
+  status('Editor cleared. Add a new pattern to begin.');
+  patternInput.focus();
+});
+patternInput.addEventListener('input', () => { renderExplanation(); cancelWorker(); clearResults(); });
+textInput.addEventListener('input', () => {
+  get('text-size').textContent = textInput.value.length.toLocaleString() + ' characters';
+  cancelWorker();
+  clearResults();
+});
+flagInputs.forEach(input => input.addEventListener('change', () => {
+  cancelWorker();
+  clearResults();
+  renderExplanation();
+}));
+document.addEventListener('keydown', event => {
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault();
+    run();
+  }
+});
+exportButton.addEventListener('click', () => {
+  if (!lastResult) return;
+  const blob = new Blob([JSON.stringify(lastResult, null, 2) + '\n'], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'regex-matches.json';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+renderExplanation();
