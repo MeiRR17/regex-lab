@@ -1,3 +1,5 @@
+import { indexLineStarts, offsetToPosition } from './src/positions.js';
+
 // User regular expressions run only in a disposable Web Worker.
 // The main UI terminates the worker when a pattern takes too long.
 const MAX_TEXT = 50_000;
@@ -30,6 +32,7 @@ self.onmessage = event => {
     }
     const expression = new RegExp(pattern, flags);
     const started = performance.now();
+    const lineStarts = indexLineStarts(text);
     const matches = [];
     let truncated = false;
     let match;
@@ -42,6 +45,7 @@ self.onmessage = event => {
         index: match.index,
         end: match.index + match[0].length,
         value: match[0],
+        ...offsetToPosition(match.index, lineStarts, text.length),
         captures: match.slice(1),
         groups: match.groups ? { ...match.groups } : null,
       });
