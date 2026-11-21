@@ -4,3 +4,6 @@
 
 /* Keyboard-accessible jump from a regex match to its original source selection. */
 .match-line{flex-wrap:wrap}.match-jump{flex:0 0 auto;border:1px solid #ccddfa;border-radius:6px;background:#edf4ff;color:#2a5fba;font:700 11px/1.3 ui-sans-serif,system-ui,sans-serif;padding:6px 9px;cursor:pointer}.match-jump:hover{background:#e0ecff}.match-jump:focus-visible{outline:2px solid #3271ed;outline-offset:2px}@media(max-width:530px){.match-index{white-space:normal}.match-jump{margin-inline-start:auto}}
+
+/* Separate full match data from privacy-reduced position metadata export. */
+.export-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;min-width:0}.export-actions .button{font-size:12px}.export-actions .button:focus-visible{outline:2px solid #5a96f0;outline-offset:2px}@media(max-width:600px){.export-actions{width:100%;justify-content:stretch}.export-actions .button{flex:1 1 auto}}
