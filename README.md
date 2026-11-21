@@ -15,9 +15,10 @@ Then visit http://localhost:8000. The app uses native ES modules and Web Workers
 - JavaScript RegExp pattern input and six flags (g, i, m, s, u, y).
 - Highlighting of exact matched text without HTML injection. Supports zero-width matches.
 - UTF-16 match offsets **and one-based line/column coordinates**, numbered capture groups, and named captures. CRLF and LF line breaks are supported.
+- Each match includes an accessible **Jump to text** button that focuses the original textarea and selects the exact matched UTF-16 range (or caret for zero-width matches).
 - Pattern explanations for character classes, escapes, quantifiers, anchors, groups and lookarounds.
 - Local JSON export containing pattern, flags, captures, UTF-16 indices, line/column coordinates, run duration and truncation state.
-- **Replacement preview:** enter a JavaScript replacement string, view the resulting text and copy it. Supports native tokens such as whole match (`$&`), numbered captures (`$1`), named captures (`$<name>`) and a literal dollar sign (`$$`).
+- **Replacement preview:** enter a JavaScript replacement string, view the resulting text and copy it. The replacement form markup and labels were also repaired after duplicate elements were found in the Draft branch. Supports native tokens such as whole match (`$&`), numbered captures (`$1`), named captures (`$<name>`) and a literal dollar sign (`$$`).
 - Built-in sample expression and text, responsive accessible interface.
 - Execution in a disposable Web Worker that is terminated after 1.5 seconds to prevent long-running expressions from freezing the main page.
 - No third-party libraries, account, cookies, telemetry or server-side processing.
