@@ -7,6 +7,9 @@ const flagInputs = [...document.querySelectorAll('.flags input')];
 const highlight = get('highlighted');
 const matchList = get('match-list');
 const exportButton = get('export');
+const replacementInput = get('replacement');
+const replacementResult = get('replace-result');
+const copyReplacement = get('copy-replace');
 const example = {
   pattern: '([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+)\\.([A-Za-z]{2,})',
   text: 'Questions? Email hello@example.com or support@regex.dev.\nIgnore invalid addresses like hello@@site.com.',
@@ -37,6 +40,9 @@ function cancelWorker() {
 function clearResults() {
   lastResult = null;
   exportButton.disabled = true;
+  copyReplacement.disabled = true;
+  replacementResult.value = '';
+  get('replace-status').textContent = 'Run the expression to preview replacements.';
   get('match-count').textContent = '0 matches';
   get('duration').textContent = '—';
   highlight.replaceChildren();
@@ -122,12 +128,13 @@ function run() {
   const pattern = patternInput.value;
   const text = textInput.value;
   const activeFlags = flags();
+  const replacement = replacementInput.value;
   if (!pattern.trim()) {
     status('Enter a pattern to find matches.', 'error');
     return;
   }
-  if (pattern.length > 500 || text.length > 50_000) {
-    status('Limit: 500 pattern characters and 50,000 test-text characters.', 'error');
+  if (pattern.length > 500 || text.length > 50_000 || replacement.length > 200) {
+    status('Limits: 500 pattern characters, 50,000 test-text characters and 200 replacement characters.', 'error');
     return;
   }
   status('Evaluating the regular expression…');
@@ -157,18 +164,27 @@ function run() {
       return;
     }
     lastResult = {
-      pattern, flags: activeFlags, inputLength: text.length, matches: event.data.matches,
+      pattern, flags: activeFlags, replacement, inputLength: text.length, matches: event.data.matches,
       durationMs: event.data.duration, capped: event.data.capped,
     };
     renderHighlight(text, event.data.matches);
     renderMatches(event.data.matches);
+    if (typeof event.data.replacedText === 'string') {
+      replacementResult.value = event.data.replacedText;
+      copyReplacement.disabled = false;
+      get('replace-status').textContent = 'Replacement preview: ' + event.data.replacedText.length.toLocaleString() + ' characters.';
+    } else {
+      replacementResult.value = '';
+      copyReplacement.disabled = true;
+      get('replace-status').textContent = event.data.replacementWarning || 'Replacement preview is unavailable.';
+    }
     get('match-count').textContent = event.data.matches.length + (event.data.capped ? '+' : '') + ' matches';
     get('duration').textContent = event.data.duration + ' ms in an isolated worker';
     exportButton.disabled = false;
     status(event.data.matches.length + ' match(es) found.' +
       (event.data.capped ? ' Showing only the first 250.' : ''), 'success');
   };
-  activeWorker.postMessage({ id, pattern, flags: activeFlags, text });
+  activeWorker.postMessage({ id, pattern, flags: activeFlags, text, replacement });
 }
 
 get('run').addEventListener('click', run);
@@ -184,6 +200,7 @@ get('reset').addEventListener('click', () => {
   cancelWorker();
   patternInput.value = '';
   textInput.value = '';
+  replacementInput.value = '';
   flagInputs.forEach(input => { input.checked = input.value === 'g' || input.value === 'i'; });
   get('text-size').textContent = '0 characters';
   clearResults();
@@ -192,6 +209,11 @@ get('reset').addEventListener('click', () => {
   patternInput.focus();
 });
 patternInput.addEventListener('input', () => { renderExplanation(); cancelWorker(); clearResults(); });
+replacementInput.addEventListener('input', () => {
+  cancelWorker();
+  clearResults();
+  status('Replacement template changed. Run the expression again.');
+});
 textInput.addEventListener('input', () => {
   get('text-size').textContent = textInput.value.length.toLocaleString() + ' characters';
   cancelWorker();
@@ -206,6 +228,17 @@ document.addEventListener('keydown', event => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
     event.preventDefault();
     run();
+  }
+});
+copyReplacement.addEventListener('click', async () => {
+  if (copyReplacement.disabled) return;
+  try {
+    await navigator.clipboard.writeText(replacementResult.value);
+    status('Replacement preview copied to clipboard.', 'success');
+  } catch {
+    replacementResult.focus();
+    replacementResult.select();
+    status('Clipboard access was blocked. The preview is selected for manual copying.', 'error');
   }
 });
 exportButton.addEventListener('click', () => {
