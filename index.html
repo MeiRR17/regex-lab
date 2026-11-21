@@ -30,14 +30,14 @@
         <div class="result-footer"><span id="duration">—</span><button id="export" type="button" class="button secondary" disabled>↓ Export matches JSON</button></div>
         <section class="replace-panel" aria-labelledby="replace-heading">
           <div class="replace-heading"><div><span class="kicker">LIVE REPLACEMENT</span><h3 id="replace-heading">Try a replacement template</h3></div><button id="copy-replace" type="button" class="button secondary" disabled>Copy result</button></div>
-          <label for="replacement">Replacement text (supports         <div class="result-footer"><span id="duration">—</span><button id="export" type="button" class="button secondary" disabled>↓ Export matches JSON</button></div>, $1,         <div class="result-footer"><span id="duration">—</span><button id="export" type="button" class="button secondary" disabled>↓ Export matches JSON</button></div>lt;name&gt; and $)</label>
-          <input id="replacement" type="text" spellcheck="false" autocomplete="off" maxlength="200" placeholder="e.g. [        <div class="result-footer"><span id="duration">—</span><button id="export" type="button" class="button secondary" disabled>↓ Export matches JSON</button></div>amp;]">
+          <label for="replacement">Replacement text (supports $&amp;, $1, $&lt;name&gt; and $$)</label>
+          <input id="replacement" type="text" spellcheck="false" autocomplete="off" maxlength="200" placeholder="e.g. [$&amp;]">
           <label for="replace-result">Replaced text (read-only)</label>
           <textarea id="replace-result" rows="5" readonly spellcheck="false" aria-describedby="replace-status" placeholder="Run the expression to preview replacements."></textarea>
           <p id="replace-status" role="status" aria-live="polite">Replacement is evaluated in the same disposable worker as the match search.</p>
         </section>
         <div class="section-rule"></div>
-        <div class="match-title"><h3>Match details</h3><span id="match-hint">Index · Value · Captures</span></div>
+        <div class="match-title"><h3>Match details</h3><span id="match-hint">Select a match to jump to its text · Index · Value · Captures</span></div>
         <div id="match-list" class="match-list"><div class="empty-state">Matched groups and offsets will appear here.</div></div>
       </section>
     </div>
