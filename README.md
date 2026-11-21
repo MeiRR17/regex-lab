@@ -17,14 +17,15 @@ Then visit http://localhost:8000. The app uses native ES modules and Web Workers
 - Offset display, numbered capture groups, and named captures.
 - Pattern explanations for character classes, escapes, quantifiers, anchors, groups and lookarounds.
 - Local JSON export containing the pattern, flags, captures, indices, run duration and truncation state.
+- **Replacement preview:** enter a JavaScript replacement string, see the resulting text and copy it; supports `- Local JSON export containing the pattern, flags, captures, indices, run duration and truncation state.`, `$1`, `$<name>`, `$` and other native JS replace tokens.
 - Built-in sample expression and text, responsive accessible interface.
 - Execution in a disposable Web Worker that is terminated after 1.5 seconds to prevent long-running expressions from freezing the main page.
 - No third-party libraries, account, cookies, telemetry or server-side processing.
 
 ## Limits and safety
 
-- Pattern length: up to 500 characters. Test text: up to 50,000 characters.
-- Results: at most 250 matches. Zero-length matches advance safely during global or sticky evaluation.
+- Pattern length: up to 500 characters. Test text: up to 50,000 characters. Replacement template: up to 200 characters. Replacement preview: up to 100,000 characters.
+- Results: at most 250 matches. Zero-length matches advance safely during global or sticky evaluation. Replacement preview is disabled when the maximum match count is reached for global/sticky patterns, so the preview cannot misleadingly claim a complete transformation.
 - Timeout: 1,500 ms. A browser worker is stopped when the time budget is exceeded.
 - Flag compatibility depends on the JavaScript RegExp features supported by your browser.
 - Token explanations are simplified educational descriptions rather than complete grammar validation.
@@ -36,7 +37,7 @@ Then visit http://localhost:8000. The app uses native ES modules and Web Workers
 - index.html — playground UI
 - styles.css — responsive layout and syntax colors
 - app.js — user interactions, worker lifecycle, safe DOM match rendering, export
-- worker.js — isolated regex execution and match capture
+- worker.js — isolated regex execution, match capture and bounded replacement preview
 - src/explain.js — human-readable syntax explanations
 - LICENSE — MIT
 
