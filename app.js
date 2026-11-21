@@ -1,4 +1,5 @@
 import { explainPattern } from './src/explain.js';
+import { summarizeMatches } from './src/metadata.js';
 
 const get = id => document.getElementById(id);
 const patternInput = get('pattern');
@@ -7,6 +8,7 @@ const flagInputs = [...document.querySelectorAll('.flags input')];
 const highlight = get('highlighted');
 const matchList = get('match-list');
 const exportButton = get('export');
+const exportPrivate = get('export-private');
 const replacementInput = get('replacement');
 const replacementResult = get('replace-result');
 const copyReplacement = get('copy-replace');
@@ -40,6 +42,7 @@ function cancelWorker() {
 function clearResults() {
   lastResult = null;
   exportButton.disabled = true;
+  exportPrivate.disabled = true;
   copyReplacement.disabled = true;
   replacementResult.value = '';
   get('replace-status').textContent = 'Run the expression to preview replacements.';
@@ -203,6 +206,7 @@ function run() {
     get('match-count').textContent = event.data.matches.length + (event.data.capped ? '+' : '') + ' matches';
     get('duration').textContent = event.data.duration + ' ms in an isolated worker';
     exportButton.disabled = false;
+    exportPrivate.disabled = false;
     status(event.data.matches.length + ' match(es) found.' +
       (event.data.capped ? ' Showing only the first 250.' : ''), 'success');
   };
@@ -263,16 +267,31 @@ copyReplacement.addEventListener('click', async () => {
     status('Clipboard access was blocked. The preview is selected for manual copying.', 'error');
   }
 });
-exportButton.addEventListener('click', () => {
-  if (!lastResult) return;
-  const blob = new Blob([JSON.stringify(lastResult, null, 2) + '\n'], { type: 'application/json;charset=utf-8' });
+function downloadReport(report, filename) {
+  const blob = new Blob([JSON.stringify(report, null, 2) + '\n'], {
+    type: 'application/json;charset=utf-8',
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'regex-matches.json';
+  link.download = filename;
   document.body.append(link);
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+exportButton.addEventListener('click', () => {
+  if (!lastResult) return;
+  downloadReport(lastResult, 'regex-matches.json');
+  status('Full JSON exported. It contains matched text and captures; review before sharing.');
+});
+exportPrivate.addEventListener('click', () => {
+  if (!lastResult) return;
+  try {
+    downloadReport(summarizeMatches(lastResult), 'regex-match-positions.json');
+    status('Positions-only JSON exported. It excludes patterns, matched strings and captures.');
+  } catch (error) {
+    status('Metadata export failed: ' + error.message, 'error');
+  }
 });
 renderExplanation();
