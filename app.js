@@ -105,7 +105,15 @@ function renderMatches(matches) {
     code.textContent = '#' + (i + 1) + '  ' + JSON.stringify(result.value.length > 180 ? result.value.slice(0, 180) + '…' : result.value);
     const index = span('Line ' + result.line + ', col ' + result.column +
       ' · [' + result.index + '–' + result.end + ']', 'match-index');
-    line.append(code, index);
+    const jump = document.createElement('button');
+    jump.type = 'button';
+    jump.className = 'match-jump';
+    jump.dataset.start = String(result.index);
+    jump.dataset.end = String(result.end);
+    jump.textContent = 'Jump to text';
+    jump.setAttribute('aria-label', 'Select match ' + (i + 1) +
+      ' at line ' + result.line + ', column ' + result.column);
+    line.append(code, index, jump);
     card.append(line);
     if (result.captures.length || (result.groups && Object.keys(result.groups).length)) {
       const captures = document.createElement('div');
@@ -122,6 +130,19 @@ function renderMatches(matches) {
     matchList.append(card);
   }
 }
+
+matchList.addEventListener('click', event => {
+  const button = event.target.closest('button.match-jump');
+  if (!button || !matchList.contains(button)) return;
+  const start = Number(button.dataset.start);
+  const end = Number(button.dataset.end);
+  // Match locations are UTF-16 offsets into the exact current source text.
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 ||
+      end < start || end > textInput.value.length || !lastResult) return;
+  textInput.focus();
+  textInput.setSelectionRange(start, end);
+  textInput.scrollIntoView({ block: 'center', behavior: 'instant' });
+});
 
 function run() {
   cancelWorker();
