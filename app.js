@@ -103,7 +103,8 @@ function renderMatches(matches) {
     line.className = 'match-line';
     const code = document.createElement('code');
     code.textContent = '#' + (i + 1) + '  ' + JSON.stringify(result.value.length > 180 ? result.value.slice(0, 180) + '…' : result.value);
-    const index = span('[' + result.index + '–' + result.end + ']', 'match-index');
+    const index = span('Line ' + result.line + ', col ' + result.column +
+      ' · [' + result.index + '–' + result.end + ']', 'match-index');
     line.append(code, index);
     card.append(line);
     if (result.captures.length || (result.groups && Object.keys(result.groups).length)) {
