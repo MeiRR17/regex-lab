@@ -141,7 +141,7 @@ matchList.addEventListener('click', event => {
       end < start || end > textInput.value.length || !lastResult) return;
   textInput.focus();
   textInput.setSelectionRange(start, end);
-  textInput.scrollIntoView({ block: 'center', behavior: 'instant' });
+  textInput.scrollIntoView({ block: 'center', behavior: 'auto' });
 });
 
 function run() {
