@@ -95,3 +95,40 @@ export function matchLineCountsCsv(report) {
   // If the worker produced no matches, header-only output is intentional.
   return '\uFEFF' + rows.join('\r\n') + '\r\n';
 }
+
+
+/**
+ * Counts-only match-length distribution for a bounded worker preview.
+ * This is a lower-bound distribution whenever matching was capped at 250.
+ * Unlike the position and per-line exports, no document length, offsets,
+ * line numbers, text, patterns, or individual match lengths are emitted.
+ */
+export function matchLengthBucketsJson(report) {
+  const summary = summarizeMatches(report);
+  const buckets = {
+    zero: 0,
+    one: 0,
+    twoToFive: 0,
+    sixToTwenty: 0,
+    twentyOneToHundred: 0,
+    overHundred: 0,
+  };
+  for (const position of summary.positions) {
+    const length = position.length;
+    const key = length === 0 ? 'zero' :
+      length === 1 ? 'one' :
+      length <= 5 ? 'twoToFive' :
+      length <= 20 ? 'sixToTwenty' :
+      length <= 100 ? 'twentyOneToHundred' : 'overHundred';
+    buckets[key]++;
+  }
+  return JSON.stringify({
+    format: 'regex-lab-match-length-buckets-v1',
+    recordedMatches: summary.shownMatches,
+    capped: summary.capped,
+    countsComplete: !summary.capped,
+    units: 'UTF-16-code-units',
+    buckets,
+    advisory: 'Aggregate recorded match lengths only; no pattern, test text, document length, offsets, lines, captured text or individual match lengths. When capped, bucket counts are lower bounds. Counts can still be sensitive.',
+  }, null, 2) + '\n';
+}

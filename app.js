@@ -1,5 +1,5 @@
 import { explainPattern } from './src/explain.js';
-import { summarizeMatches, matchPositionsCsv, matchLineCountsCsv } from './src/metadata.js';
+import { summarizeMatches, matchPositionsCsv, matchLineCountsCsv, matchLengthBucketsJson } from './src/metadata.js';
 
 const get = id => document.getElementById(id);
 const patternInput = get('pattern');
@@ -11,6 +11,7 @@ const exportButton = get('export');
 const exportPrivate = get('export-private');
 const exportPositionsCsv = get('export-positions-csv');
 const exportLineCounts = get('export-line-counts');
+const exportLengthBuckets = get('export-length-buckets');
 const replacementInput = get('replacement');
 const replacementResult = get('replace-result');
 const copyReplacement = get('copy-replace');
@@ -50,6 +51,7 @@ function clearResults() {
   exportPrivate.disabled = true;
   exportPositionsCsv.disabled = true;
   exportLineCounts.disabled = true;
+  exportLengthBuckets.disabled = true;
   copyReplacement.disabled = true;
   downloadReplacement.disabled = true;
   replacementResult.value = '';
@@ -219,6 +221,7 @@ function run() {
     exportPrivate.disabled = false;
     exportPositionsCsv.disabled = false;
     exportLineCounts.disabled = false;
+    exportLengthBuckets.disabled = false;
     status(event.data.matches.length + ' match(es) found.' +
       (event.data.capped ? ' Showing only the first 250.' : ''), 'success');
   };
@@ -336,6 +339,18 @@ exportButton.addEventListener('click', () => {
   if (!lastResult) return;
   downloadReport(lastResult, 'regex-matches.json');
   status('Full JSON exported. It contains matched text and captures; review before sharing.');
+});
+exportLengthBuckets.addEventListener('click', () => {
+  if (!lastResult || exportLengthBuckets.disabled) return;
+  try {
+    downloadText(matchLengthBucketsJson(lastResult),
+      'regex-match-length-buckets.json', 'application/json;charset=utf-8');
+    status('Match-length distribution exported without positions, line numbers, pattern or source text.' +
+      (lastResult.capped ? ' The 250-match cap makes bucket counts incomplete lower bounds.' : ''),
+      'success');
+  } catch (error) {
+    status('Match-length summary export failed: ' + error.message, 'error');
+  }
 });
 exportLineCounts.addEventListener('click', () => {
   if (!lastResult || exportLineCounts.disabled) return;
