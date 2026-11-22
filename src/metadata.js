@@ -12,14 +12,25 @@ export function summarizeMatches(report) {
       report.inputLength < 0 || report.inputLength > 50_000) {
     throw new TypeError('Expected a bounded Regex Lab match report.');
   }
+  // Programmatic callers can supply reports that were modified after a
+  // Worker run. Refuse impossible coordinates before serializing them as
+  // trusted-looking private or aggregate audit metadata.
+  if (report.capped === true && report.matches.length !== 250) {
+    throw new TypeError('A capped preview must contain 250 recorded matches.');
+  }
   let zeroWidth = 0;
+  let previousEnd = 0;
   const locations = report.matches.map(match => {
-    if (!match || !Number.isInteger(match.index) || !Number.isInteger(match.end) ||
-        !Number.isInteger(match.line) || !Number.isInteger(match.column) ||
-        match.index < 0 || match.end < match.index || match.end > report.inputLength ||
-        match.line < 1 || match.column < 1) {
-      throw new TypeError('Invalid Regex Lab match location.');
+    if (!match || !Number.isSafeInteger(match.index) || !Number.isSafeInteger(match.end) ||
+        !Number.isSafeInteger(match.line) || !Number.isSafeInteger(match.column) ||
+        match.index < previousEnd || match.end < match.index ||
+        match.end > report.inputLength || match.line < 1 ||
+        match.line > match.index + 1 ||
+        match.column < 1 || match.column > match.index + 1 ||
+        match.line + match.column > match.index + 2) {
+      throw new TypeError('Invalid, overlapping or out-of-range Regex Lab match metadata.');
     }
+    previousEnd = match.end;
     if (match.index === match.end) zeroWidth++;
     return {
       start: match.index,
@@ -79,10 +90,7 @@ export function matchLineCountsCsv(report) {
   const summary = summarizeMatches(report);
   const totals = new Map();
   for (const match of summary.positions) {
-    // The matched line is already validated as a positive integer.
-    if (match.line > summary.inputLength + 1) {
-      throw new TypeError('Match line number exceeds the bounded input length.');
-    }
+    // The shared projection already validated this line and its offset.
     const entry = totals.get(match.line) ?? { count: 0, zeroWidth: 0 };
     entry.count++;
     if (match.length === 0) entry.zeroWidth++;
