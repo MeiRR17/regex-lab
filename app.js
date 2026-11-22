@@ -1,5 +1,5 @@
 import { explainPattern } from './src/explain.js';
-import { summarizeMatches, matchPositionsCsv } from './src/metadata.js';
+import { summarizeMatches, matchPositionsCsv, matchLineCountsCsv } from './src/metadata.js';
 
 const get = id => document.getElementById(id);
 const patternInput = get('pattern');
@@ -10,6 +10,7 @@ const matchList = get('match-list');
 const exportButton = get('export');
 const exportPrivate = get('export-private');
 const exportPositionsCsv = get('export-positions-csv');
+const exportLineCounts = get('export-line-counts');
 const replacementInput = get('replacement');
 const replacementResult = get('replace-result');
 const copyReplacement = get('copy-replace');
@@ -48,6 +49,7 @@ function clearResults() {
   exportButton.disabled = true;
   exportPrivate.disabled = true;
   exportPositionsCsv.disabled = true;
+  exportLineCounts.disabled = true;
   copyReplacement.disabled = true;
   downloadReplacement.disabled = true;
   replacementResult.value = '';
@@ -216,6 +218,7 @@ function run() {
     exportButton.disabled = false;
     exportPrivate.disabled = false;
     exportPositionsCsv.disabled = false;
+    exportLineCounts.disabled = false;
     status(event.data.matches.length + ' match(es) found.' +
       (event.data.capped ? ' Showing only the first 250.' : ''), 'success');
   };
@@ -333,6 +336,18 @@ exportButton.addEventListener('click', () => {
   if (!lastResult) return;
   downloadReport(lastResult, 'regex-matches.json');
   status('Full JSON exported. It contains matched text and captures; review before sharing.');
+});
+exportLineCounts.addEventListener('click', () => {
+  if (!lastResult || exportLineCounts.disabled) return;
+  try {
+    downloadText(matchLineCountsCsv(lastResult), 'regex-match-lines.csv',
+      'text/csv;charset=utf-8');
+    status('Per-line match counts exported without patterns, matched text, or column positions.' +
+      (lastResult.capped ? ' The 250-match preview cap makes these counts incomplete lower bounds.' : ''),
+      'success');
+  } catch (error) {
+    status('Line count export failed: ' + error.message, 'error');
+  }
 });
 exportPositionsCsv.addEventListener('click', () => {
   if (!lastResult || exportPositionsCsv.disabled) return;

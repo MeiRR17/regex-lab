@@ -65,3 +65,33 @@ export function matchPositionsCsv(report) {
   }
   return '\uFEFF' + rows.join('\r\n') + '\r\n';
 }
+
+
+/**
+ * Aggregate recorded regex matches by one-based text line. This is distinct
+ * from positions CSV: no character offsets, source content, pattern, group
+ * names or individual capture data are projected to the output.
+ *
+ * The 250-match preview cap means a truncated report is only a lower bound
+ * of the actual number of matches per line; every exported row says so.
+ */
+export function matchLineCountsCsv(report) {
+  const summary = summarizeMatches(report);
+  const totals = new Map();
+  for (const match of summary.positions) {
+    // The matched line is already validated as a positive integer.
+    if (match.line > summary.inputLength + 1) {
+      throw new TypeError('Match line number exceeds the bounded input length.');
+    }
+    const entry = totals.get(match.line) ?? { count: 0, zeroWidth: 0 };
+    entry.count++;
+    if (match.length === 0) entry.zeroWidth++;
+    totals.set(match.line, entry);
+  }
+  const rows = [['line', 'recorded_matches', 'zero_width_matches', 'incomplete_preview'].join(',')];
+  for (const [line, { count, zeroWidth }] of [...totals].sort((a, b) => a[0] - b[0])) {
+    rows.push([line, count, zeroWidth, summary.capped ? 'true' : 'false'].join(','));
+  }
+  // If the worker produced no matches, header-only output is intentional.
+  return '\uFEFF' + rows.join('\r\n') + '\r\n';
+}
