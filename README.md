@@ -29,7 +29,7 @@ Full JSON exports include **matched text and captures**. Use the reduced export 
 ## Limits and safety
 
 - Pattern length: up to 500 characters. Test text: up to 50,000 characters. Replacement template: up to 200 characters. Replacement preview: up to 100,000 characters.
-- Results: at most 250 matches. Zero-length matches advance safely during global or sticky evaluation. Replacement preview is disabled only when **additional matches exist beyond** the 250 shown, so a truncated result cannot misleadingly claim a complete transformation.
+- Results: at most 250 matches, with a combined **500,000 UTF-16-unit cap** on match text and capture details sent from the Worker (including duplicate named-group values). If this payload cap is exceeded the Worker reports an error instead of sending an oversized partial result. Zero-length matches advance safely during global or sticky evaluation. Replacement preview is disabled only when **additional matches exist beyond** the 250 shown, so a truncated result cannot misleadingly claim a complete transformation.
 - Timeout: 1,500 ms. A browser worker is stopped when the time budget is exceeded.
 - Flag compatibility depends on the JavaScript RegExp features supported by your browser.
 - Token explanations are simplified educational descriptions rather than complete grammar validation.

@@ -7,6 +7,9 @@ const MAX_PATTERN = 500;
 const MAX_MATCHES = 250;
 const MAX_REPLACEMENT = 200;
 const MAX_PREVIEW = 100_000;
+// Bound structured-clone payload size even when the number of matches is small.
+// Named captures repeat referenced strings and are counted again intentionally.
+const MAX_MATCH_PAYLOAD_UNITS = 500_000;
 
 function advanceStringIndex(source, index, unicode) {
   if (!unicode || index >= source.length) return index + 1;
@@ -35,19 +38,33 @@ self.onmessage = event => {
     const lineStarts = indexLineStarts(text);
     const matches = [];
     let truncated = false;
+    let payloadUnits = 0;
     let match;
     while ((match = expression.exec(text)) !== null) {
       if (matches.length >= MAX_MATCHES) {
         truncated = true;
         break;
       }
+      const captures = match.slice(1);
+      const groups = match.groups ? { ...match.groups } : null;
+      let itemUnits = match[0].length;
+      for (const capture of captures) itemUnits += capture?.length ?? 0;
+      if (groups) {
+        for (const [name, capture] of Object.entries(groups)) {
+          itemUnits += name.length + (capture?.length ?? 0);
+        }
+      }
+      payloadUnits += itemUnits;
+      if (payloadUnits > MAX_MATCH_PAYLOAD_UNITS) {
+        throw new RangeError('Match and capture details exceed the safe display limit. Reduce text, matches or capture groups.');
+      }
       matches.push({
         index: match.index,
         end: match.index + match[0].length,
         value: match[0],
         ...offsetToPosition(match.index, lineStarts, text.length),
-        captures: match.slice(1),
-        groups: match.groups ? { ...match.groups } : null,
+        captures,
+        groups,
       });
       if (!expression.global && !expression.sticky) break;
       if (match[0].length === 0) {
