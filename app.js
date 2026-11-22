@@ -12,6 +12,7 @@ const exportPrivate = get('export-private');
 const replacementInput = get('replacement');
 const replacementResult = get('replace-result');
 const copyReplacement = get('copy-replace');
+const downloadReplacement = get('download-replace');
 const example = {
   pattern: '([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+)\\.([A-Za-z]{2,})',
   text: 'Questions? Email hello@example.com or support@regex.dev.\nIgnore invalid addresses like hello@@site.com.',
@@ -46,6 +47,7 @@ function clearResults() {
   exportButton.disabled = true;
   exportPrivate.disabled = true;
   copyReplacement.disabled = true;
+  downloadReplacement.disabled = true;
   replacementResult.value = '';
   get('replace-status').textContent = 'Run the expression to preview replacements.';
   get('match-count').textContent = '0 matches';
@@ -199,10 +201,12 @@ function run() {
     if (typeof event.data.replacedText === 'string') {
       replacementResult.value = event.data.replacedText;
       copyReplacement.disabled = false;
+      downloadReplacement.disabled = false;
       get('replace-status').textContent = 'Replacement preview: ' + event.data.replacedText.length.toLocaleString() + ' characters.';
     } else {
       replacementResult.value = '';
       copyReplacement.disabled = true;
+      downloadReplacement.disabled = true;
       get('replace-status').textContent = event.data.replacementWarning || 'Replacement preview is unavailable.';
     }
     get('match-count').textContent = event.data.matches.length + (event.data.capped ? '+' : '') + ' matches';
@@ -278,6 +282,26 @@ copyReplacement.addEventListener('click', async () => {
     status('Clipboard access was blocked. The preview is selected for manual copying.', 'error');
   }
 });
+/** Explicit export only: replacement output may contain the full original
+ * input and sensitive values. Never auto-download, store or transmit it.
+ */
+downloadReplacement.addEventListener('click', () => {
+  if (!lastResult || downloadReplacement.disabled || copyReplacement.disabled) return;
+  const snapshot = replacementResult.value;
+  // Blob download is created synchronously from the displayed preview,
+  // not from mutable input or an incomplete worker result.
+  const blob = new Blob([snapshot], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'regex-replacement.txt';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  status('Replacement text downloaded. It may contain confidential input; review before sharing.', 'success');
+});
+
 function downloadReport(report, filename) {
   const blob = new Blob([JSON.stringify(report, null, 2) + '\n'], {
     type: 'application/json;charset=utf-8',

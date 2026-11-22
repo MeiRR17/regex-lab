@@ -29,12 +29,13 @@
         <div class="test-output" id="highlighted" aria-label="Test text with highlighted matches"></div>
         <div class="result-footer"><span id="duration">—</span><div class="export-actions"><button id="export" type="button" class="button secondary" disabled>↓ Export matches JSON</button><button id="export-private" type="button" class="button secondary" disabled>↓ Positions only JSON</button></div></div>
         <section class="replace-panel" aria-labelledby="replace-heading">
-          <div class="replace-heading"><div><span class="kicker">LIVE REPLACEMENT</span><h3 id="replace-heading">Try a replacement template</h3></div><button id="copy-replace" type="button" class="button secondary" disabled>Copy result</button></div>
+          <div class="replace-heading"><div><span class="kicker">LIVE REPLACEMENT</span><h3 id="replace-heading">Try a replacement template</h3></div><button id="copy-replace" type="button" class="button secondary" disabled>Copy result</button><button id="download-replace" type="button" class="button secondary" disabled>↓ Result (.txt)</button></div>
           <label for="replacement">Replacement text (supports $&amp;, $1, $&lt;name&gt; and $$)</label>
           <input id="replacement" type="text" spellcheck="false" autocomplete="off" maxlength="200" placeholder="e.g. [$&amp;]">
           <label for="replace-result">Replaced text (read-only)</label>
           <textarea id="replace-result" rows="5" readonly spellcheck="false" aria-describedby="replace-status" placeholder="Run the expression to preview replacements."></textarea>
           <p id="replace-status" role="status" aria-live="polite">Replacement is evaluated in the same disposable worker as the match search.</p>
+          <p class="hint">Downloaded replacement text may include your entire test input, including confidential data. Review before sharing.</p>
         </section>
         <div class="section-rule"></div>
         <div class="match-title"><h3>Match details</h3><span id="match-hint">Select a match to jump to its text · Index · Value · Captures</span></div>

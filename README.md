@@ -19,7 +19,7 @@ Then visit http://localhost:8000. The app uses native ES modules and Web Workers
 - Pattern explanations for character classes, escapes, quantifiers, anchors, groups and lookarounds.
 - Local JSON export containing pattern, flags, captures, UTF-16 indices, line/column coordinates, run duration and truncation state.
 - A separate **Positions only JSON** download exports match start/end offsets, line/column, match lengths and counts without the regex pattern, replacement expression, match text, capture contents or group names. Position metadata and input length can still be sensitive and should be reviewed before sharing.
-- **Replacement preview:** enter a JavaScript replacement string, view the resulting text and copy it. Copy captures the exact current preview and warns if the asynchronous clipboard write completes after the expression, input, flags, or replacement has changed. A prior clipboard write cannot be revoked; users should replace or clear stale clipboard contents. The replacement form markup and labels were also repaired after duplicate elements were found in the Draft branch. Supports native tokens such as whole match (`$&`), numbered captures (`$1`), named captures (`$<name>`) and a literal dollar sign (`$$`).
+- **Replacement preview:** enter a JavaScript replacement string, view the resulting text, copy it or explicitly download the computed replacement as a UTF-8 `.txt` file. Copy captures the exact current preview and warns if the asynchronous clipboard write completes after the expression, input, flags, or replacement has changed. A prior clipboard write cannot be revoked; users should replace or clear stale clipboard contents. The replacement form markup and labels were also repaired after duplicate elements were found in the Draft branch. Supports native tokens such as whole match (`$&`), numbered captures (`$1`), named captures (`$<name>`) and a literal dollar sign (`$$`).
 - Built-in sample expression and text, responsive accessible interface.
 - Execution in a disposable Web Worker that is terminated after 1.5 seconds to prevent long-running expressions from freezing the main page.
 - No third-party libraries, account, cookies, telemetry or server-side processing.
@@ -29,6 +29,7 @@ Full JSON exports include **matched text and captures**. Use the reduced export 
 ## Limits and safety
 
 - Pattern length: up to 500 characters. Test text: up to 50,000 characters. Replacement template: up to 200 characters. Replacement preview: up to 100,000 characters.
+- The on-demand replacement-text download is enabled only when the latest worker run produced a complete replacement preview. It is disabled immediately whenever the pattern, flags, test text or replacement template changes, after a reset, or if preview generation fails. The download is a snapshot of the displayed preview and may include the original confidential test text; it is **not** a privacy-reduced export.
 - Results: at most 250 matches, with a combined **500,000 UTF-16-unit cap** on match text and capture details sent from the Worker (including duplicate named-group values). If this payload cap is exceeded the Worker reports an error instead of sending an oversized partial result. Zero-length matches advance safely during global or sticky evaluation. Replacement preview is disabled only when **additional matches exist beyond** the 250 shown, so a truncated result cannot misleadingly claim a complete transformation.
 - Timeout: 1,500 ms. A browser worker is stopped when the time budget is exceeded.
 - Flag compatibility depends on the JavaScript RegExp features supported by your browser.
@@ -40,7 +41,7 @@ Full JSON exports include **matched text and captures**. Use the reduced export 
 
 - index.html — playground UI
 - styles.css — responsive layout and syntax colors
-- app.js — user interactions, worker lifecycle, safe DOM match rendering, export
+- app.js — user interactions, worker lifecycle, safe DOM match rendering, report and replacement-text export
 - worker.js — isolated regex execution, match capture, position tracking and bounded replacement preview
 - src/positions.js — pure UTF-16 offset to line/column conversion
 - src/explain.js — human-readable syntax explanations
