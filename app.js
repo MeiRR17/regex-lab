@@ -20,6 +20,7 @@ let worker = null;
 let requestId = 0;
 let lastResult = null;
 let timeout = null;
+let resultRevision = 0; // Invalidate outstanding clipboard responses when results change.
 
 function flags() {
   return flagInputs.filter(input => input.checked).map(input => input.value).join('');
@@ -40,6 +41,7 @@ function cancelWorker() {
   if (timeout !== null) { clearTimeout(timeout); timeout = null; }
 }
 function clearResults() {
+  resultRevision++;
   lastResult = null;
   exportButton.disabled = true;
   exportPrivate.disabled = true;
@@ -257,11 +259,20 @@ document.addEventListener('keydown', event => {
   }
 });
 copyReplacement.addEventListener('click', async () => {
-  if (copyReplacement.disabled) return;
+  if (copyReplacement.disabled || !lastResult) return;
+  const revision = resultRevision;
+  const content = replacementResult.value;
   try {
-    await navigator.clipboard.writeText(replacementResult.value);
+    await navigator.clipboard.writeText(content);
+    if (revision !== resultRevision) {
+      // Browser clipboard writes cannot be rolled back. Never imply a fresh
+      // result was copied if the user edited/cleared while the write awaited.
+      status('An earlier replacement was copied after the results changed. The clipboard may still contain stale text; replace or clear it.', 'error');
+      return;
+    }
     status('Replacement preview copied to clipboard.', 'success');
   } catch {
+    if (revision !== resultRevision) return;
     replacementResult.focus();
     replacementResult.select();
     status('Clipboard access was blocked. The preview is selected for manual copying.', 'error');
