@@ -39,3 +39,29 @@ export function summarizeMatches(report) {
     advisory: 'Contains offsets and document length, but no pattern or matched text. Positions may still be sensitive.',
   };
 }
+
+
+/**
+ * Spreadsheet-readable positions only. Rows are numeric metadata, never
+ * snippets, patterns, replacement templates, matched values or captures.
+ * When capped=true, only the first recorded matches are exported.
+ * The first line is a fixed schema; even an empty match set produces
+ * a valid empty CSV table, while the full counts remain in the JSON report.
+ */
+export function matchPositionsCsv(report) {
+  const summary = summarizeMatches(report);
+  const headers = [
+    'match_number', 'start_utf16', 'end_utf16', 'line', 'column',
+    'length_utf16', 'zero_width', 'truncated_preview',
+  ];
+  const rows = [headers.join(',')];
+  for (let i = 0; i < summary.positions.length; i++) {
+    const item = summary.positions[i];
+    rows.push([
+      i + 1, item.start, item.end, item.line, item.column,
+      item.length, item.length === 0 ? 'true' : 'false',
+      summary.capped ? 'true' : 'false',
+    ].join(','));
+  }
+  return '\uFEFF' + rows.join('\r\n') + '\r\n';
+}

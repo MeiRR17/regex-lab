@@ -1,5 +1,5 @@
 import { explainPattern } from './src/explain.js';
-import { summarizeMatches } from './src/metadata.js';
+import { summarizeMatches, matchPositionsCsv } from './src/metadata.js';
 
 const get = id => document.getElementById(id);
 const patternInput = get('pattern');
@@ -9,6 +9,7 @@ const highlight = get('highlighted');
 const matchList = get('match-list');
 const exportButton = get('export');
 const exportPrivate = get('export-private');
+const exportPositionsCsv = get('export-positions-csv');
 const replacementInput = get('replacement');
 const replacementResult = get('replace-result');
 const copyReplacement = get('copy-replace');
@@ -46,6 +47,7 @@ function clearResults() {
   lastResult = null;
   exportButton.disabled = true;
   exportPrivate.disabled = true;
+  exportPositionsCsv.disabled = true;
   copyReplacement.disabled = true;
   downloadReplacement.disabled = true;
   replacementResult.value = '';
@@ -213,6 +215,7 @@ function run() {
     get('duration').textContent = event.data.duration + ' ms in an isolated worker';
     exportButton.disabled = false;
     exportPrivate.disabled = false;
+    exportPositionsCsv.disabled = false;
     status(event.data.matches.length + ' match(es) found.' +
       (event.data.capped ? ' Showing only the first 250.' : ''), 'success');
   };
@@ -302,6 +305,17 @@ downloadReplacement.addEventListener('click', () => {
   status('Replacement text downloaded. It may contain confidential input; review before sharing.', 'success');
 });
 
+function downloadText(contents, filename, mime) {
+  const blob = new Blob([contents], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 function downloadReport(report, filename) {
   const blob = new Blob([JSON.stringify(report, null, 2) + '\n'], {
     type: 'application/json;charset=utf-8',
@@ -319,6 +333,17 @@ exportButton.addEventListener('click', () => {
   if (!lastResult) return;
   downloadReport(lastResult, 'regex-matches.json');
   status('Full JSON exported. It contains matched text and captures; review before sharing.');
+});
+exportPositionsCsv.addEventListener('click', () => {
+  if (!lastResult || exportPositionsCsv.disabled) return;
+  try {
+    downloadText(matchPositionsCsv(lastResult), 'regex-match-positions.csv',
+      'text/csv;charset=utf-8');
+    status('Positions-only CSV exported. It has numeric coordinates but no input or matched text.' +
+      (lastResult.capped ? ' Matching was truncated: exported positions are not exhaustive.' : ''), 'success');
+  } catch (error) {
+    status('Positions CSV export failed: ' + error.message, 'error');
+  }
 });
 exportPrivate.addEventListener('click', () => {
   if (!lastResult) return;

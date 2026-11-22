@@ -18,13 +18,14 @@ Then visit http://localhost:8000. The app uses native ES modules and Web Workers
 - Each match includes an accessible **Jump to text** button that focuses the original textarea and selects the exact matched UTF-16 range (or caret for zero-width matches).
 - Pattern explanations for character classes, escapes, quantifiers, anchors, groups and lookarounds.
 - Local JSON export containing pattern, flags, captures, UTF-16 indices, line/column coordinates, run duration and truncation state.
-- A separate **Positions only JSON** download exports match start/end offsets, line/column, match lengths and counts without the regex pattern, replacement expression, match text, capture contents or group names. Position metadata and input length can still be sensitive and should be reviewed before sharing.
+- A separate **Positions only JSON** download exports match start/end offsets, line/column, match lengths and counts without the regex pattern, replacement expression, match text, capture contents or group names.
+- A separate **Positions CSV** download exports the recorded match number, UTF-16 start/end/length, one-based line/column, zero-width flag, and whether the preview was truncated. It contains no input string, matched text, regex pattern, replacement template, group names or capture values. The CSV uses fixed numeric/boolean cells and a UTF-8 BOM for spreadsheet compatibility, so no untrusted strings can be treated as spreadsheet formulas. If the 250-match cap was reached, only the recorded positions are included; an empty match set yields a header-only CSV. Position metadata and input length can still be sensitive and should be reviewed before sharing.
 - **Replacement preview:** enter a JavaScript replacement string, view the resulting text, copy it or explicitly download the computed replacement as a UTF-8 `.txt` file. Copy captures the exact current preview and warns if the asynchronous clipboard write completes after the expression, input, flags, or replacement has changed. A prior clipboard write cannot be revoked; users should replace or clear stale clipboard contents. The replacement form markup and labels were also repaired after duplicate elements were found in the Draft branch. Supports native tokens such as whole match (`$&`), numbered captures (`$1`), named captures (`$<name>`) and a literal dollar sign (`$$`).
 - Built-in sample expression and text, responsive accessible interface.
 - Execution in a disposable Web Worker that is terminated after 1.5 seconds to prevent long-running expressions from freezing the main page.
 - No third-party libraries, account, cookies, telemetry or server-side processing.
 
-Full JSON exports include **matched text and captures**. Use the reduced export when exact matches should not be disclosed; the two buttons are deliberately separate. The reduced report is computed in memory and does not transmit inputs.
+Full JSON exports include **matched text and captures**. Use the JSON or CSV positions-only export when exact matches should not be disclosed; all download controls are deliberately separate. Even reduced position coordinates may reveal sensitive information about document structure. The reduced report is computed in memory and does not transmit inputs.
 
 ## Limits and safety
 
@@ -45,6 +46,7 @@ Full JSON exports include **matched text and captures**. Use the reduced export 
 - worker.js — isolated regex execution, match capture, position tracking and bounded replacement preview
 - src/positions.js — pure UTF-16 offset to line/column conversion
 - src/explain.js — human-readable syntax explanations
+- src/metadata.js — redacted match-position JSON projection and spreadsheet-safe numeric CSV export
 - LICENSE — MIT
 
 ## License
