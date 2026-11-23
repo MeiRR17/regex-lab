@@ -12,9 +12,11 @@ Then visit http://localhost:8000. The app uses native ES modules and Web Workers
 
 ## Features
 
-- JavaScript RegExp pattern input and six flags (g, i, m, s, u, y).
+- JavaScript RegExp pattern input and eight flags (d, g, i, m, s, u, v, y). The UI makes `u` and `v` mutually exclusive.
 - Highlighting of exact matched text without HTML injection. Supports zero-width matches.
-- UTF-16 match offsets **and one-based line/column coordinates**, numbered capture groups, and named captures. CRLF and LF line breaks are supported.
+- UTF-16 match offsets **and one-based line/column coordinates**, numbered capture groups, and named captures.
+- **Capture indices (`d` flag):** see each participating numbered or named group's exact UTF-16 `[start, end]` range and use **Jump to group** to select it in the source editor. Unmatched optional captures have no range. Full JSON contains these ranges; privacy-reduced exports continue to contain only whole-match locations and aggregates.
+- **Unicode sets (`v` flag):** use modern Unicode set operations and properties in browsers with `v` support. Selecting `v` clears `u` and vice versa. Both Unicode-aware modes advance zero-length global matches by code point, including supplementary characters. CRLF and LF line breaks are supported.
 - Each match includes an accessible **Jump to text** button that focuses the original textarea and selects the exact matched UTF-16 range (or caret for zero-width matches).
 - Pattern explanations for character classes, escapes, quantifiers, anchors, groups and lookarounds.
 - Local JSON export containing pattern, flags, captures, UTF-16 indices, line/column coordinates, run duration and truncation state.
@@ -35,7 +37,8 @@ Full JSON exports include **matched text and captures**. Use the JSON or CSV pos
 - The on-demand replacement-text download is enabled only when the latest worker run produced a complete replacement preview. It is disabled immediately whenever the pattern, flags, test text or replacement template changes, after a reset, or if preview generation fails. The download is a snapshot of the displayed preview and may include the original confidential test text; it is **not** a privacy-reduced export.
 - Results: at most 250 matches, with a combined **500,000 UTF-16-unit cap** on match text and capture details sent from the Worker (including duplicate named-group values). If this payload cap is exceeded the Worker reports an error instead of sending an oversized partial result. Zero-length matches advance safely during global or sticky evaluation. Replacement preview is disabled only when **additional matches exist beyond** the 250 shown, so a truncated result cannot misleadingly claim a complete transformation.
 - Timeout: 1,500 ms. A browser worker is stopped when the time budget is exceeded.
-- Flag compatibility depends on the JavaScript RegExp features supported by your browser.
+- Flag compatibility depends on the JavaScript RegExp features supported by your browser. In particular, `v` (Unicode sets) and `d` (match indices) require browser implementations supporting those ECMAScript flags; unsupported flags show a worker error. Flags `u` and `v` are incompatible and rejected together even for programmatic worker requests.
+- Group navigation is available only when `d` is selected; the reported UTF-16 spans refer to the original test text. Neither the scoped navigation metadata nor the raw captures appear in positions-only or aggregate export formats.
 - Token explanations are simplified educational descriptions rather than complete grammar validation.
 - Be cautious with regexes copied from untrusted sources. The worker provides a UI isolation boundary but is not a security sandbox for hostile code.
 - Automated tests have not been run; the owner requested centralized verification later.
@@ -45,7 +48,7 @@ Full JSON exports include **matched text and captures**. Use the JSON or CSV pos
 - index.html — playground UI
 - styles.css — responsive layout and syntax colors
 - app.js — user interactions, worker lifecycle, safe DOM match rendering, report and replacement-text export
-- worker.js — isolated regex execution, match capture, position tracking and bounded replacement preview
+- worker.js — isolated regex execution, match capture, optional `d` capture indices, Unicode-aware zero-width advancement and bounded replacement preview
 - src/positions.js — pure UTF-16 offset to line/column conversion
 - src/explain.js — human-readable syntax explanations
 - src/metadata.js — redacted match-position JSON projection, numeric positions CSV, aggregated per-line counts CSV and counts-only match-length buckets JSON

@@ -26,9 +26,12 @@ self.onmessage = event => {
     if (typeof text !== 'string' || text.length > MAX_TEXT) {
       throw new RangeError('Test text must be no more than 50,000 characters.');
     }
-    if (typeof flags !== 'string' || !/^[gimsuy]*$/.test(flags) ||
+    if (typeof flags !== 'string' || !/^[dgimsuvy]*$/.test(flags) ||
         new Set(flags).size !== flags.length) {
-      throw new SyntaxError('Only unique g, i, m, s, u and y flags are supported.');
+      throw new SyntaxError('Only unique d, g, i, m, s, u, v and y flags are supported.');
+    }
+    if (flags.includes('u') && flags.includes('v')) {
+      throw new SyntaxError('Unicode flags u and v cannot be combined.');
     }
     if (typeof replacement !== 'string' || replacement.length > MAX_REPLACEMENT) {
       throw new RangeError('Replacement template must be no more than 200 characters.');
@@ -47,6 +50,15 @@ self.onmessage = event => {
       }
       const captures = match.slice(1);
       const groups = match.groups ? { ...match.groups } : null;
+      // The d flag exposes exact UTF-16 ranges for participated captures.
+      // Nonparticipating optional groups have undefined indices (shown as null).
+      const captureRanges = match.indices
+        ? match.indices.slice(1).map(range => range ? [range[0], range[1]] : null)
+        : null;
+      const groupRanges = match.indices?.groups
+        ? Object.fromEntries(Object.entries(match.indices.groups).map(
+          ([name, range]) => [name, range ? [range[0], range[1]] : null]))
+        : null;
       let itemUnits = match[0].length;
       for (const capture of captures) itemUnits += capture?.length ?? 0;
       if (groups) {
@@ -54,6 +66,9 @@ self.onmessage = event => {
           itemUnits += name.length + (capture?.length ?? 0);
         }
       }
+      // Bound the additional location metadata alongside captured text.
+      if (captureRanges) itemUnits += captureRanges.length * 2;
+      if (groupRanges) itemUnits += Object.keys(groupRanges).length * 2;
       payloadUnits += itemUnits;
       if (payloadUnits > MAX_MATCH_PAYLOAD_UNITS) {
         throw new RangeError('Match and capture details exceed the safe display limit. Reduce text, matches or capture groups.');
@@ -65,10 +80,13 @@ self.onmessage = event => {
         ...offsetToPosition(match.index, lineStarts, text.length),
         captures,
         groups,
+        captureRanges,
+        groupRanges,
       });
       if (!expression.global && !expression.sticky) break;
       if (match[0].length === 0) {
-        expression.lastIndex = advanceStringIndex(text, expression.lastIndex, expression.unicode);
+        expression.lastIndex = advanceStringIndex(
+          text, expression.lastIndex, expression.unicode || expression.unicodeSets);
       }
     }
 

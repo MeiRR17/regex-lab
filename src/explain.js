@@ -11,7 +11,8 @@ const ESCAPES = {
 const FLAGS = {
   g: 'Find every match', i: 'Ignore letter case',
   m: 'Treat ^ and $ as line anchors', s: 'Dot also matches newlines',
-  u: 'Unicode-aware matching', y: 'Match only from lastIndex',
+  u: 'Unicode-aware matching', v: 'Unicode sets and set operations (exclusive with u)',
+  d: 'Expose match and capture UTF-16 indices', y: 'Match only from lastIndex',
 };
 
 function token(value, label, kind = 'plain') { return { value, label, kind }; }

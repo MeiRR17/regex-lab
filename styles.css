@@ -7,3 +7,8 @@
 
 /* Separate full match data from privacy-reduced position metadata export. */
 .export-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;min-width:0}.export-actions .button{font-size:12px}.export-actions .button:focus-visible{outline:2px solid #5a96f0;outline-offset:2px}@media(max-width:600px){.export-actions{width:100%;justify-content:stretch}.export-actions .button{flex:1 1 auto}}
+
+/* d-flag capture ranges are navigable without showing them in reduced exports. */
+.capture-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:3px 0;min-width:0}
+.capture-row span{flex:1 1 200px;min-width:0;overflow-wrap:anywhere;white-space:pre-wrap}
+.capture-row .match-jump{margin-inline-start:0}

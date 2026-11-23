@@ -16,7 +16,7 @@
       <section class="panel input-panel" aria-labelledby="pattern-heading">
         <div class="section-head"><span class="number">01</span><div><h2 id="pattern-heading">Your expression</h2><p>JavaScript RegExp syntax</p></div><button type="button" id="example" class="link-button">Load example ↗</button></div>
         <div class="pattern-input"><span class="slash" aria-hidden="true">/</span><input id="pattern" type="text" spellcheck="false" autocomplete="off" placeholder="([A-Za-z0-9._%+-]+)@([\w.-]+)\.(\w{2,})" aria-label="Regular expression pattern"><span class="slash" aria-hidden="true">/</span><span id="flag-readout">gi</span></div>
-        <fieldset class="flags"><legend>Flags</legend><label><input type="checkbox" value="g" checked><span>g <small>global</small></span></label><label><input type="checkbox" value="i" checked><span>i <small>ignore case</small></span></label><label><input type="checkbox" value="m"><span>m <small>multiline</small></span></label><label><input type="checkbox" value="s"><span>s <small>dotAll</small></span></label><label><input type="checkbox" value="u"><span>u <small>Unicode</small></span></label><label><input type="checkbox" value="y"><span>y <small>sticky</small></span></label></fieldset>
+        <fieldset class="flags"><legend>Flags</legend><label><input type="checkbox" value="g" checked><span>g <small>global</small></span></label><label><input type="checkbox" value="i" checked><span>i <small>ignore case</small></span></label><label><input type="checkbox" value="m"><span>m <small>multiline</small></span></label><label><input type="checkbox" value="s"><span>s <small>dotAll</small></span></label><label><input type="checkbox" value="u"><span>u <small>Unicode</small></span></label><label><input type="checkbox" value="v"><span>v <small>Unicode sets</small></span></label><label><input type="checkbox" value="d"><span>d <small>capture indices</small></span></label><label><input type="checkbox" value="y"><span>y <small>sticky</small></span></label></fieldset>
         <div class="section-rule"></div>
         <div class="field-head"><label for="text">Test text</label><span id="text-size">0 characters</span></div>
         <textarea id="text" spellcheck="false" rows="10" placeholder="Paste some text to see how your expression matches..."></textarea>
@@ -38,7 +38,7 @@
           <p class="hint">Downloaded replacement text may include your entire test input, including confidential data. Review before sharing.</p>
         </section>
         <div class="section-rule"></div>
-        <div class="match-title"><h3>Match details</h3><span id="match-hint">Select a match to jump to its text · Index · Value · Captures</span></div>
+        <div class="match-title"><h3>Match details</h3><span id="match-hint">Use Jump to text; enable d for capture offsets and group navigation</span></div>
         <div id="match-list" class="match-list"><div class="empty-state">Matched groups and offsets will appear here.</div></div>
       </section>
     </div>

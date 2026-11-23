@@ -131,13 +131,36 @@ function renderMatches(matches) {
     if (result.captures.length || (result.groups && Object.keys(result.groups).length)) {
       const captures = document.createElement('div');
       captures.className = 'captures';
-      const parts = result.captures.map((capture, j) => 'Group ' + (j + 1) + ': ' + JSON.stringify(capture));
+      const showCapture = (label, value, range) => {
+        const row = document.createElement('div');
+        row.className = 'capture-row';
+        const description = document.createElement('span');
+        description.textContent = label + ': ' + JSON.stringify(value) +
+          (Array.isArray(range) ? ' · [' + range[0] + '–' + range[1] + ']' : '');
+        row.append(description);
+        if (Array.isArray(range)) {
+          const jumpToCapture = document.createElement('button');
+          jumpToCapture.type = 'button';
+          jumpToCapture.className = 'match-jump';
+          jumpToCapture.dataset.start = String(range[0]);
+          jumpToCapture.dataset.end = String(range[1]);
+          jumpToCapture.textContent = 'Jump to group';
+          jumpToCapture.setAttribute('aria-label', 'Select ' + label +
+            ' from UTF-16 offset ' + range[0] + ' to ' + range[1]);
+          row.append(jumpToCapture);
+        }
+        captures.append(row);
+      };
+      result.captures.forEach((value, index) => {
+        showCapture('Group ' + (index + 1), value, result.captureRanges?.[index]);
+      });
       if (result.groups) {
         for (const [name, value] of Object.entries(result.groups)) {
-          parts.push('Named "' + name + '": ' + JSON.stringify(value));
+          const range = result.groupRanges && Object.hasOwn(result.groupRanges, name)
+            ? result.groupRanges[name] : null;
+          showCapture('Named "' + name + '"', value, range);
         }
       }
-      captures.textContent = parts.join('\n');
       card.append(captures);
     }
     matchList.append(card);
@@ -261,6 +284,13 @@ textInput.addEventListener('input', () => {
   clearResults();
 });
 flagInputs.forEach(input => input.addEventListener('change', () => {
+  // ECMAScript forbids combining u and v. Keep checkbox behavior aligned
+  // with the engine while preserving the user's most recent selection.
+  if (input.checked && (input.value === 'u' || input.value === 'v')) {
+    const other = flagInputs.find(flag => flag.value ===
+      (input.value === 'u' ? 'v' : 'u'));
+    if (other) other.checked = false;
+  }
   cancelWorker();
   clearResults();
   renderExplanation();
