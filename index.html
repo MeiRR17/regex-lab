@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101728">
+  <meta name="description" content="Test JavaScript regular expressions with match highlighting, captures and plain-language explanations.">
+  <title>Regex Lab — see exactly what matches</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="top"><a class="brand" href="./" aria-label="Regex Lab home"><span class="brand-icon">.*</span><strong>Regex<span>Lab</span></strong><small>playground</small></a><a href="https://github.com/MeiRR17/regex-lab" rel="noopener noreferrer" target="_blank" class="github">GitHub ↗</a></header>
+  <main class="shell">
+    <div class="hero"><div class="eyebrow"><span class="status-dot"></span> INTERACTIVE REGULAR EXPRESSION TESTER</div><h1>Make sense of <em>regex.</em></h1><p>Build, test, and understand regular expressions — with live match insights, groups, and plain-English explanations. All processing stays in your browser.</p></div>
+    <div class="workspace">
+      <section class="panel input-panel" aria-labelledby="pattern-heading">
+        <div class="section-head"><span class="number">01</span><div><h2 id="pattern-heading">Your expression</h2><p>JavaScript RegExp syntax</p></div><button type="button" id="example" class="link-button">Load example ↗</button></div>
+        <div class="pattern-input"><span class="slash" aria-hidden="true">/</span><input id="pattern" type="text" spellcheck="false" autocomplete="off" placeholder="([A-Za-z0-9._%+-]+)@([\w.-]+)\.(\w{2,})" aria-label="Regular expression pattern"><span class="slash" aria-hidden="true">/</span><span id="flag-readout">gi</span></div>
+        <fieldset class="flags"><legend>Flags</legend><label><input type="checkbox" value="g" checked><span>g <small>global</small></span></label><label><input type="checkbox" value="i" checked><span>i <small>ignore case</small></span></label><label><input type="checkbox" value="m"><span>m <small>multiline</small></span></label><label><input type="checkbox" value="s"><span>s <small>dotAll</small></span></label><label><input type="checkbox" value="u"><span>u <small>Unicode</small></span></label><label><input type="checkbox" value="v"><span>v <small>Unicode sets</small></span></label><label><input type="checkbox" value="d"><span>d <small>capture indices</small></span></label><label><input type="checkbox" value="y"><span>y <small>sticky</small></span></label></fieldset>
+        <div class="section-rule"></div>
+        <div class="field-head"><label for="text">Test text</label><span id="text-size">0 characters</span></div>
+        <textarea id="text" spellcheck="false" rows="10" placeholder="Paste some text to see how your expression matches..."></textarea>
+        <div class="actions"><button type="button" class="button primary" id="run">Find matches →</button><button type="button" class="button secondary" id="reset">Clear</button></div>
+        <p class="hint">Shortcut: Ctrl / ⌘ + Enter · Execution stops after 1.5 seconds.</p>
+      </section>
+      <section class="panel results-panel" aria-labelledby="results-heading">
+        <div class="results-top"><div><span class="kicker">MATCH INSPECTOR</span><h2 id="results-heading">Results</h2></div><span class="count" id="match-count">0 matches</span></div>
+        <div id="message" class="status" role="status" aria-live="polite">Enter an expression and some text, then choose Find matches.</div>
+        <div class="test-output" id="highlighted" aria-label="Test text with highlighted matches"></div>
+        <div class="result-footer"><span id="duration">—</span><div class="export-actions"><button id="export" type="button" class="button secondary" disabled>↓ Export matches JSON</button><button id="export-private" type="button" class="button secondary" disabled>↓ Positions only JSON</button><button id="export-positions-csv" type="button" class="button secondary" disabled>↓ Positions CSV</button><button id="export-line-counts" type="button" class="button secondary" disabled>↓ Matches per line CSV</button><button id="export-length-buckets" type="button" class="button secondary" disabled title="Counts by match-length interval; omits positions, lines and individual values">↓ Length counts JSON</button></div></div>
+        <section class="replace-panel" aria-labelledby="replace-heading">
+          <div class="replace-heading"><div><span class="kicker">LIVE REPLACEMENT</span><h3 id="replace-heading">Try a replacement template</h3></div><button id="copy-replace" type="button" class="button secondary" disabled>Copy result</button><button id="download-replace" type="button" class="button secondary" disabled>↓ Result (.txt)</button></div>
+          <label for="replacement">Replacement text (supports $&amp;, $1, $&lt;name&gt; and $$)</label>
+          <input id="replacement" type="text" spellcheck="false" autocomplete="off" maxlength="200" placeholder="e.g. [$&amp;]">
+          <label for="replace-result">Replaced text (read-only)</label>
+          <textarea id="replace-result" rows="5" readonly spellcheck="false" aria-describedby="replace-status" placeholder="Run the expression to preview replacements."></textarea>
+          <p id="replace-status" role="status" aria-live="polite">Replacement is evaluated in the same disposable worker as the match search.</p>
+          <p class="hint">Downloaded replacement text may include your entire test input, including confidential data. Review before sharing.</p>
+        </section>
+        <div class="section-rule"></div>
+        <div class="match-title"><h3>Match details</h3><span id="match-hint">Use Jump to text; enable d for capture offsets and group navigation</span></div>
+        <div id="match-list" class="match-list"><div class="empty-state">Matched groups and offsets will appear here.</div></div>
+      </section>
+    </div>
+    <section class="explain panel" aria-labelledby="explain-heading">
+      <div class="section-head"><span class="number">02</span><div><h2 id="explain-heading">Pattern explained</h2><p>See what every part of the pattern is doing.</p></div></div>
+      <div id="tokens" class="tokens"><span class="empty-token">Add a pattern to see an explanation.</span></div>
+      <div id="flag-explanations" class="flag-descriptions"></div>
+      <p class="disclaimer">Explanations are a learning aid, not a complete JavaScript regex grammar validator.</p>
+    </section>
+    <div class="privacy">◎ Private by design — your expression and test text are evaluated only in a disposable browser worker, never sent to a server.</div>
+  </main>
+  <footer><span>Regex Lab · A public developer tool</span><span>Built by <a href="https://github.com/MeiRR17" target="_blank" rel="noopener noreferrer">Meir Dvir</a></span></footer>
+</body></html>
